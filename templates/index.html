@@ -5,6 +5,25 @@
       .hidden{
         display: none;
       }
+      ul{
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        width: 200px;
+      }
+      li {
+        clear: both;
+      }
+      li button{
+        -webkit-appearance: none;
+        border: none;
+        outline:  none;
+        color: red;
+        float: right;
+        cursor: pointer;
+        font-size: 20px;
+        
+      }
     </style>
   </head>
   <body>
@@ -12,14 +31,64 @@
       <input type="text" name="description" id="description" />
       <input type="submit" value="Create" />
     </form>
+
     <div id="error" class="hidden"></div>
     <ul id="todos">
       {% for d in data %}
-      <li>{{ d.description }}</li>
+      <li>
+        <input class="check-completed" data-id="{{d.id}}" 
+        type="checkbox" {% if d.completed %} checked {% 
+          endif %}/>
+          {{ d.description }}
+
+
+          <button onclick="fetch" class="check-deleted" data-id="{{d.id}}" {% if d.removed %} pressed {% endif %} >&cross;</button>
+
+        </li>
       {% endfor %}
     </ul>
 
     <script>
+      const buttons = document.querySelectorAll('.check-deleted')
+      for(let i=0; i<buttons.length; i++){
+        const button = buttons[i];
+        button.onclick = function(e){
+          const deleted = e.target.pressed;
+          const todoID = e.target.dataset['id'];
+          fetch('todos/' +todoID ,{
+            method: 'DELETE'
+          });
+        }
+      }
+                
+      
+
+
+
+      const checkboxes = document.querySelectorAll('.check-completed')
+      for(let i=0; i<checkboxes.length; i++){
+        const checkbox = checkboxes[i];
+        checkbox.onchange = function(e){ 
+          const newCompleted = e.target.checked;
+          const todoID = e.target.dataset['id'];
+          fetch('/todos/'+ todoID +'/set-completed',{
+            method: 'POST',
+            body: JSON.stringify({
+              'completed': newCompleted
+            }), 
+            headers:{
+              'Content-Type' :'application/json'
+            }
+          })
+          .then(function(){
+            document.getElementById('error').className = 'hidden';
+          })
+          .catch(function(){
+            document.getElementById('error').className ='';
+        })
+        }
+      }
+
       document.getElementById('form').onsubmit = function(e){
         e.preventDefault();
         fetch('/todos/create', {
